@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "mirrorworld",
+	"version": "${version}",
+	"name": "MirrorWorld",
+	"description": "Creative dimension mod",
+	"authors": [
+		"CapsLock"
+	],
+	"contact": {
+		"sources": "https://github.com/CapsLock-dev/mirror-dimension-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/mirrorworld/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"capslab.mirrorworld.MirrorWorld"
+		],
+		"client": [
+			"capslab.mirrorworld.client.MirrorWorldClient"
+		]
+	},
+	"mixins": [
+		"mirrorworld.mixins.json",
+		{
+			"config": "mirrorworld.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
