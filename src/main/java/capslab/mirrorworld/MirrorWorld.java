@@ -70,6 +70,7 @@ public class MirrorWorld implements ModInitializer {
 				});
 			}
 		});
+
 	}
 
 }

@@ -22,7 +22,6 @@ Player data in both worlds are independent of each other.
 
 ### Known issues
 - Doesn't copy entities, block entities and don't update light.
-- Spawning portal with setblock in mirror world teleports to nether and then overwrites original playerdata when returning to overworld. 
 
 ### Will add in future
 - Admin commands in mirror dimension 
