@@ -62,6 +62,7 @@ public class PlayerStorageManager {
 
         ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, player.registryAccess(), safe);
         player.load(input);
+        player.removeAllEffects();
         player.setGameMode(gameMode);
         player.onUpdateAbilities();
 

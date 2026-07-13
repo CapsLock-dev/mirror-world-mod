@@ -4,7 +4,9 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "ExampleMixin",
-    "PlayerDataStorageMixin"
+    "PlayerAdvancementsMixin",
+    "PlayerDataStorageMixin",
+    "PlayerRespawnMixin"
   ],
   "injectors": {
     "defaultRequire": 1

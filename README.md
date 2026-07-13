@@ -22,10 +22,7 @@ Player data in both worlds are independent of each other.
 
 ### Known issues
 - Doesn't copy entities, block entities and don't update light.
-- Dying in mirror world teleports back to overworld
-- Potion effects are same in both worlds
-- Advancements are same in both worlds
+- Spawning portal with setblock in mirror world teleports to nether and then overwrites original playerdata when returning to overworld. 
 
 ### Will add in future
-- Creative mode in mirror dimension
 - Admin commands in mirror dimension 
