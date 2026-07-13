@@ -3,7 +3,13 @@
   "package": "capslab.mirrorworld.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ExampleMixin"
+    "EndGateWayMixin",
+    "EndPortalMixin",
+    "ExampleMixin",
+    "NetherPortalMixin",
+    "PlayerAdvancementsMixin",
+    "PlayerDataStorageMixin",
+    "PlayerRespawnMixin"
   ],
   "injectors": {
     "defaultRequire": 1
