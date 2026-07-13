@@ -5,8 +5,11 @@ import capslab.mirrorworld.commands.CopyChunkCommands;
 import capslab.mirrorworld.commands.TeleportCommands;
 import capslab.mirrorworld.utils.ChunkCopyManager;
 import capslab.mirrorworld.utils.ChunkMarkingManager;
+import capslab.mirrorworld.utils.PlayerStorageManager;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -29,10 +32,12 @@ public class MirrorWorld implements ModInitializer {
 			ChunkMarkingManager.highlightMarkedChunks(server);
 			ChunkCopyManager.processJob(server, 1);
 		});
-	}
-
-	public static Identifier id(String path) {
-		return Identifier.fromNamespaceAndPath(MOD_ID, path);
+		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+			PlayerStorageManager.setupStorages(server);
+		});
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+			PlayerStorageManager.returnOnDisconnect(server, handler.player);
+		});
 	}
 
 }

@@ -3,7 +3,8 @@
   "package": "capslab.mirrorworld.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ExampleMixin"
+    "ExampleMixin",
+    "PlayerDataStorageMixin"
   ],
   "injectors": {
     "defaultRequire": 1

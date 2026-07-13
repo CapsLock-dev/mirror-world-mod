@@ -1,6 +1,7 @@
 # MirrorWorld (WIP)
 
 Adding dimension where player can experiment or plan future building without affecting their real world.
+Player data in both worlds are independent of each other.
 
 ### Mod info
 **Loader: Fabric**
@@ -21,8 +22,10 @@ Adding dimension where player can experiment or plan future building without aff
 
 ### Known issues
 - Doesn't copy entities, block entities and don't update light.
+- Dying in mirror world teleports back to overworld
+- Potion effects are same in both worlds
+- Advancements are same in both worlds
 
 ### Will add in future
-- Separate player data in mirror dimension (inventory, achievements, etc.)
 - Creative mode in mirror dimension
 - Admin commands in mirror dimension 
