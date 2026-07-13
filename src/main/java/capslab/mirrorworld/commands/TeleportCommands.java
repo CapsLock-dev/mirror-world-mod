@@ -35,8 +35,8 @@ public class TeleportCommands {
         ServerPlayer p = context.getSource().getPlayer();
         MinecraftServer server = context.getSource().getServer();
         if (p == null) return 1;
-        if (p.level().dimension().equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
-            context.getSource().sendFailure(Component.literal("Already in mirror dimension"));
+        if (!p.level().dimension().equals(server.overworld().dimension())) {
+            context.getSource().sendFailure(Component.literal("Player must be in the overworld to enter mirror dimension"));
             return 1;
         }
         ServerLevel mirror_world = context.getSource().getServer().getLevel(MirrorWorld.MIRROR_DIMENSION_KEY);
