@@ -1,27 +1,17 @@
 package capslab.mirrorworld.commands;
 
 import capslab.mirrorworld.MirrorWorld;
-import capslab.mirrorworld.utils.PlayerStorageManager;
+import capslab.mirrorworld.utils.playerdata.MirrorWorldManager;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.portal.TeleportTransition;
-import net.minecraft.world.phys.Vec3;
-
-import java.util.Optional;
-
-import static capslab.mirrorworld.utils.PlayerStorageManager.mirrorStorage;
-import static capslab.mirrorworld.utils.PlayerStorageManager.normalStorage;
 
 public class TeleportCommands {
+
     public static void registerCommands() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("mirror_tp")
@@ -39,38 +29,12 @@ public class TeleportCommands {
             context.getSource().sendFailure(Component.literal("Player must be in the overworld to enter mirror dimension"));
             return 1;
         }
-        ServerLevel mirror_world = context.getSource().getServer().getLevel(MirrorWorld.MIRROR_DIMENSION_KEY);
-        if (mirror_world == null) {
-            context.getSource().sendFailure(Component.literal("Mirror world doesn't exists"));
-            return 1;
+        MirrorWorldManager.Result res = MirrorWorldManager.enterMirror(server, p);
+        switch (res) {
+            case OVERWORLD_DATA_MISSING -> context.getSource().sendFailure(Component.literal("Overworld data doesn't exists"));
+            case MIRROR_WORLD_UNAVAILABLE -> context.getSource().sendFailure(Component.literal("Mirror world doesn't exists"));
+            case SUCCESS -> context.getSource().sendSuccess(() -> Component.literal("Teleported to mirror world"), false);
         }
-
-        normalStorage.save(p);
-        Optional<CompoundTag> mirrorData = mirrorStorage.load(p);
-
-        Vec3 destination = mirrorData.map(PlayerStorageManager::extractPos).orElse(p.position());
-
-        if (mirrorData.isPresent()) {
-            PlayerStorageManager.applyPlayerData(p, mirrorData.get(), GameType.CREATIVE);
-        } else {
-            PlayerStorageManager.resetToFreshMirrorState(p);
-        }
-
-        TeleportTransition transition = new TeleportTransition(
-                mirror_world,
-                destination,
-                Vec3.ZERO,
-                0.0F,
-                0.0F,
-                TeleportTransition.DO_NOTHING
-        );
-        p.teleport(transition);
-        server.execute(() -> {
-            p.connection.send(new ClientboundGameEventPacket(
-                    ClientboundGameEventPacket.CHANGE_GAME_MODE, GameType.CREATIVE.getId()
-            ));
-        });
-        context.getSource().sendSuccess(() -> Component.literal("Called /mirror_tp"), false);
         return 1;
     }
 
@@ -82,32 +46,12 @@ public class TeleportCommands {
             context.getSource().sendFailure(Component.literal("Not in mirror dimension"));
             return 1;
         }
-        ServerLevel overworld = context.getSource().getServer().overworld();
-
-        mirrorStorage.save(p);
-        Optional<CompoundTag> normalData = normalStorage.load(p);
-
-        Vec3 destination = normalData
-                .map(PlayerStorageManager::extractPos)
-                .orElse(p.position());
-
-        normalData.ifPresent(tag -> PlayerStorageManager.applyPlayerData(p, tag, GameType.SURVIVAL));
-
-        TeleportTransition transition = new TeleportTransition(
-                overworld,
-                destination,
-                Vec3.ZERO,
-                0.0F,
-                0.0F,
-                TeleportTransition.DO_NOTHING
-        );
-        p.teleport(transition);
-        server.execute(() -> {
-            p.connection.send(new ClientboundGameEventPacket(
-                    ClientboundGameEventPacket.CHANGE_GAME_MODE, GameType.SURVIVAL.getId()
-            ));
-        });
-        context.getSource().sendSuccess(() -> Component.literal("Called /mirror_exit"), false);
+        MirrorWorldManager.Result res = MirrorWorldManager.exitMirror(server, p);
+        switch (res) {
+            case OVERWORLD_DATA_MISSING -> context.getSource().sendFailure(Component.literal("Overworld data doesn't exists"));
+            case MIRROR_WORLD_UNAVAILABLE -> context.getSource().sendFailure(Component.literal("Mirror world doesn't exists"));
+            case SUCCESS -> context.getSource().sendSuccess(() -> Component.literal("Teleported to overworld"), false);
+        }
         return 1;
     }
 }

@@ -1,6 +1,6 @@
 package capslab.mirrorworld.commands;
 
-import capslab.mirrorworld.utils.ChunkMarkingManager;
+import capslab.mirrorworld.utils.chunkcopy.ChunkMarkingManager;
 
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;

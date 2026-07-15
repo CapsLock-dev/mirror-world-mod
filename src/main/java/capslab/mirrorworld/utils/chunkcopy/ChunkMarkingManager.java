@@ -1,4 +1,4 @@
-package capslab.mirrorworld.utils;
+package capslab.mirrorworld.utils.chunkcopy;
 
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;

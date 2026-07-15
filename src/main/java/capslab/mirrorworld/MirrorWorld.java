@@ -3,9 +3,10 @@ package capslab.mirrorworld;
 import capslab.mirrorworld.commands.ChunkMarkingCommands;
 import capslab.mirrorworld.commands.CopyChunkCommands;
 import capslab.mirrorworld.commands.TeleportCommands;
-import capslab.mirrorworld.utils.ChunkCopyManager;
-import capslab.mirrorworld.utils.ChunkMarkingManager;
-import capslab.mirrorworld.utils.PlayerStorageManager;
+import capslab.mirrorworld.utils.chunkcopy.ChunkCopyManager;
+import capslab.mirrorworld.utils.chunkcopy.ChunkMarkingManager;
+import capslab.mirrorworld.utils.playerdata.MirrorWorldManager;
+import capslab.mirrorworld.utils.playerdata.PlayerStorageManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -47,7 +48,9 @@ public class MirrorWorld implements ModInitializer {
 			PlayerStorageManager.setupStorages(server);
 		});
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-			PlayerStorageManager.returnOnDisconnect(server, handler.player);
+			if (handler.player.level().dimension().equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
+				MirrorWorldManager.exitMirror(server, handler.player);
+			}
 		});
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
 			boolean diedInMirror = oldPlayer.level().dimension().equals(MirrorWorld.MIRROR_DIMENSION_KEY);

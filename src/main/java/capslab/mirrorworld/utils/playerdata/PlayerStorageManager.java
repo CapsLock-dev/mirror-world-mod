@@ -1,4 +1,4 @@
-package capslab.mirrorworld.utils;
+package capslab.mirrorworld.utils.playerdata;
 
 import capslab.mirrorworld.MirrorWorld;
 import net.minecraft.nbt.CompoundTag;
@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -29,28 +30,6 @@ public class PlayerStorageManager {
 
         normalStorage = new MirrorPlayerDataStorage(realPlayerDataDir, server.getFixerUpper());
         mirrorStorage = new MirrorPlayerDataStorage(mirrorPlayerDataDir, server.getFixerUpper());
-    }
-
-    public static void returnOnDisconnect(MinecraftServer server, ServerPlayer player) {
-        if (player.level().dimension().equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
-            mirrorStorage.save(player);
-            Optional<CompoundTag> normalData = normalStorage.load(player);
-            normalData.ifPresent(tag -> {
-                Vec3 dest = extractPos(tag);
-
-                applyPlayerData(player, tag, GameType.SURVIVAL);
-
-                player.connection.send(new ClientboundGameEventPacket(
-                        ClientboundGameEventPacket.CHANGE_GAME_MODE, GameType.CREATIVE.getId()
-                ));
-
-                ServerLevel overworld = server.overworld();
-                TeleportTransition transition = new TeleportTransition(
-                        overworld, dest, Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING
-                );
-                player.teleport(transition);
-            });
-        }
     }
 
     public static void applyPlayerData(ServerPlayer player, CompoundTag tag, GameType gameMode) {

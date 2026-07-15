@@ -1,7 +1,7 @@
 package capslab.mirrorworld.mixin;
 
 import capslab.mirrorworld.MirrorWorld;
-import capslab.mirrorworld.utils.PlayerStorageManager;
+import capslab.mirrorworld.utils.playerdata.PlayerStorageManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.storage.PlayerDataStorage;

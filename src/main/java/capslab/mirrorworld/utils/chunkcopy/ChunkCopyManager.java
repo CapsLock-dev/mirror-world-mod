@@ -1,4 +1,4 @@
-package capslab.mirrorworld.utils;
+package capslab.mirrorworld.utils.chunkcopy;
 
 import capslab.mirrorworld.MirrorWorld;
 import net.minecraft.network.chat.Component;

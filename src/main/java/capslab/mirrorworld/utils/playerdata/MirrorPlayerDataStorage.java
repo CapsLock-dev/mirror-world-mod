@@ -1,4 +1,4 @@
-package capslab.mirrorworld.utils;
+package capslab.mirrorworld.utils.playerdata;
 
 import com.mojang.datafixers.DataFixer;
 import net.minecraft.nbt.CompoundTag;
