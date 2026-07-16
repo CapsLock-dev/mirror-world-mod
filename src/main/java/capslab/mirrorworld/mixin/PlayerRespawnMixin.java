@@ -35,14 +35,14 @@ public abstract class PlayerRespawnMixin {
         }
     }
 
-    @Inject(method="getRespawnConfig", at = @At("HEAD"))
-    public ServerPlayer.@Nullable RespawnConfig getRespawnConfig(CallbackInfoReturnable<ServerPlayer.RespawnConfig> cir) {
+    @Inject(method="getRespawnConfig", at = @At("HEAD"), cancellable = true)
+    public void getRespawnConfig(CallbackInfoReturnable<ServerPlayer.RespawnConfig> cir) {
         ServerPlayer self = (ServerPlayer) (Object) this;
         ResourceKey<Level> dim = self.level().dimension();
         if (dim.equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)) {
-            return self.getAttached(PlayerStorageManager.MIRROR_RESPAWN_ATTACHMENT);
+            cir.setReturnValue(self.getAttached(PlayerStorageManager.MIRROR_RESPAWN_ATTACHMENT));
         } else {
-            return self.getAttached(PlayerStorageManager.OVERWORLD_RESPAWN_ATTACHMENT);
+            cir.setReturnValue(self.getAttached(PlayerStorageManager.OVERWORLD_RESPAWN_ATTACHMENT));
         }
     }
 
