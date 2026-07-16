@@ -52,28 +52,6 @@ public class MirrorWorld implements ModInitializer {
 				MirrorWorldManager.exitMirror(server, handler.player);
 			}
 		});
-		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
-			boolean diedInMirror = oldPlayer.level().dimension().equals(MirrorWorld.MIRROR_DIMENSION_KEY);
-			boolean respawnedInMirror = newPlayer.level().dimension().equals(MirrorWorld.MIRROR_DIMENSION_KEY);
-			MinecraftServer server = newPlayer.level().getServer();
-			if (diedInMirror || respawnedInMirror) {
-				if (respawnedInMirror) {
-					ServerLevel overworld = server.overworld();
-					BlockPos spawn = overworld.getRespawnData().pos();
-					newPlayer.teleport(new TeleportTransition(
-							overworld, Vec3.atCenterOf(spawn), Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING
-					));
-				}
-				Optional<CompoundTag> normalData = PlayerStorageManager.normalStorage.load(newPlayer);
-				normalData.ifPresent(tag -> PlayerStorageManager.applyPlayerData(newPlayer, tag, GameType.SURVIVAL));
-				server.execute(() -> {
-					newPlayer.connection.send(new ClientboundGameEventPacket(
-							ClientboundGameEventPacket.CHANGE_GAME_MODE, GameType.SURVIVAL.getId()
-					));
-				});
-			}
-		});
-
 	}
 
 }

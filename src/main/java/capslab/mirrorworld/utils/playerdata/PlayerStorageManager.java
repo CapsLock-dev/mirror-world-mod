@@ -1,28 +1,35 @@
 package capslab.mirrorworld.utils.playerdata;
 
 import capslab.mirrorworld.MirrorWorld;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
 import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.phys.Vec3;
 
 import java.nio.file.Path;
-import java.util.Optional;
 
 public class PlayerStorageManager {
     public static MirrorPlayerDataStorage mirrorStorage;
     public static MirrorPlayerDataStorage normalStorage;
+
+    public static final AttachmentType<ServerPlayer.RespawnConfig> MIRROR_RESPAWN_ATTACHMENT = AttachmentRegistry.create(
+            Identifier.fromNamespaceAndPath(MirrorWorld.MOD_ID, "mirror_respawn_attachment"),
+            builder -> builder.persistent(ServerPlayer.RespawnConfig.CODEC)
+    );
+    public static final AttachmentType<ServerPlayer.RespawnConfig> OVERWORLD_RESPAWN_ATTACHMENT = AttachmentRegistry.create(
+            Identifier.fromNamespaceAndPath(MirrorWorld.MOD_ID, "overworld_respawn_attachment"),
+            builder -> builder.persistent(ServerPlayer.RespawnConfig.CODEC)
+    );
 
     public static void setupStorages(MinecraftServer server) {
         Path realPlayerDataDir = server.getWorldPath(LevelResource.PLAYER_DATA_DIR);

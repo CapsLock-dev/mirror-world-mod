@@ -1,19 +1,19 @@
 package capslab.mirrorworld.mixin;
 
 import capslab.mirrorworld.MirrorWorld;
+import capslab.mirrorworld.utils.playerdata.PlayerStorageManager;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.storage.LevelData;
+import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ServerPlayer.class)
 public abstract class PlayerRespawnMixin {
@@ -22,20 +22,27 @@ public abstract class PlayerRespawnMixin {
     @Final
     private MinecraftServer server;
 
-    @ModifyVariable(method = "setRespawnPosition", at = @At("HEAD"), argsOnly = true)
-    private ServerPlayer.RespawnConfig mirrorworld$redirectMirrorSpawn(ServerPlayer.RespawnConfig respawnConfig) {
-        if (respawnConfig != null
-                && respawnConfig.respawnData().dimension().equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
-            ServerLevel mirrorworld = this.server.getLevel(MirrorWorld.MIRROR_DIMENSION_KEY);
-            LevelData.RespawnData safeRespawnData = LevelData.RespawnData.of(
-                    MirrorWorld.MIRROR_DIMENSION_KEY,
-                    mirrorworld.getRespawnData().pos(),
-                    respawnConfig.respawnData().yaw(),      // keep whatever they set
-                    respawnConfig.respawnData().pitch()
-            );
-
-            return new ServerPlayer.RespawnConfig(safeRespawnData, respawnConfig.forced());
+    @Inject(method = "setRespawnPosition", at = @At("TAIL"))
+    private void mirrorworld$setRespawnConfig(ServerPlayer.RespawnConfig config, boolean bl, CallbackInfo ci) {
+        if (config == null) return;
+        ServerPlayer self = (ServerPlayer)(Object)this;
+        ResourceKey<Level> dim = config.respawnData().dimension();
+        if (dim.equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
+            self.setAttached(PlayerStorageManager.MIRROR_RESPAWN_ATTACHMENT, config);
+        } else {
+            self.setAttached(PlayerStorageManager.OVERWORLD_RESPAWN_ATTACHMENT, config);
         }
-        return respawnConfig;
     }
+
+    @Inject(method="getRespawnConfig", at = @At("HEAD"))
+    public ServerPlayer.@Nullable RespawnConfig getRespawnConfig(CallbackInfoReturnable<ServerPlayer.RespawnConfig> cir) {
+        ServerPlayer self = (ServerPlayer) (Object) this;
+        ResourceKey<Level> dim = self.level().dimension();
+        if (dim.equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
+            return self.getAttached(PlayerStorageManager.MIRROR_RESPAWN_ATTACHMENT);
+        } else {
+            return self.getAttached(PlayerStorageManager.OVERWORLD_RESPAWN_ATTACHMENT);
+        }
+    }
+
 }
