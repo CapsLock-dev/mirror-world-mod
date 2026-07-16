@@ -1,12 +1,17 @@
 package capslab.mirrorworld.utils.playerdata;
 
-import capslab.mirrorworld.MirrorWorld;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.Vec3;
 
@@ -16,6 +21,19 @@ import static capslab.mirrorworld.utils.playerdata.PlayerStorageManager.mirrorSt
 import static capslab.mirrorworld.utils.playerdata.PlayerStorageManager.normalStorage;
 
 public class MirrorWorldManager {
+
+    public static final ResourceKey<Level> MIRROR_DIMENSION_KEY = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("mirrorworld", "mirror_world_dim"));
+
+    public static void registerEventListeners() {
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            if (handler.player.level().dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)) {
+                MirrorWorldManager.exitMirror(server, handler.player);
+            }
+        });
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            PlayerStorageManager.setupStorages(server);
+        });
+    }
 
     public enum Result {
         MIRROR_WORLD_UNAVAILABLE,
@@ -34,7 +52,7 @@ public class MirrorWorldManager {
             PlayerStorageManager.resetToFreshMirrorState(player);
         }
 
-        ServerLevel mirrorWorld = server.getLevel(MirrorWorld.MIRROR_DIMENSION_KEY);
+        ServerLevel mirrorWorld = server.getLevel(MirrorWorldManager.MIRROR_DIMENSION_KEY);
         if (mirrorWorld == null) {
             return Result.MIRROR_WORLD_UNAVAILABLE;
         }
@@ -47,6 +65,7 @@ public class MirrorWorldManager {
         });
         return Result.SUCCESS;
     }
+
     public static Result exitMirror(MinecraftServer server, ServerPlayer player) {
         mirrorStorage.save(player);
         Optional<CompoundTag> normalData = normalStorage.load(player);

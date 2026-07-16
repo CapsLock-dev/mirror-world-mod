@@ -1,6 +1,7 @@
 package capslab.mirrorworld.mixin;
 
 import capslab.mirrorworld.MirrorWorld;
+import capslab.mirrorworld.utils.playerdata.MirrorWorldManager;
 import capslab.mirrorworld.utils.playerdata.PlayerStorageManager;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -27,7 +28,7 @@ public abstract class PlayerRespawnMixin {
         if (config == null) return;
         ServerPlayer self = (ServerPlayer)(Object)this;
         ResourceKey<Level> dim = config.respawnData().dimension();
-        if (dim.equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
+        if (dim.equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)) {
             self.setAttached(PlayerStorageManager.MIRROR_RESPAWN_ATTACHMENT, config);
         } else {
             self.setAttached(PlayerStorageManager.OVERWORLD_RESPAWN_ATTACHMENT, config);
@@ -38,7 +39,7 @@ public abstract class PlayerRespawnMixin {
     public ServerPlayer.@Nullable RespawnConfig getRespawnConfig(CallbackInfoReturnable<ServerPlayer.RespawnConfig> cir) {
         ServerPlayer self = (ServerPlayer) (Object) this;
         ResourceKey<Level> dim = self.level().dimension();
-        if (dim.equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
+        if (dim.equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)) {
             return self.getAttached(PlayerStorageManager.MIRROR_RESPAWN_ATTACHMENT);
         } else {
             return self.getAttached(PlayerStorageManager.OVERWORLD_RESPAWN_ATTACHMENT);

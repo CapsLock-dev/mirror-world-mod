@@ -1,6 +1,5 @@
 package capslab.mirrorworld.commands;
 
-import capslab.mirrorworld.MirrorWorld;
 import capslab.mirrorworld.utils.playerdata.MirrorWorldManager;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -42,7 +41,7 @@ public class TeleportCommands {
         ServerPlayer p = context.getSource().getPlayer();
         MinecraftServer server = context.getSource().getServer();
         if (p == null) return 1;
-        if (!p.level().dimension().equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
+        if (!p.level().dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)) {
             context.getSource().sendFailure(Component.literal("Not in mirror dimension"));
             return 1;
         }

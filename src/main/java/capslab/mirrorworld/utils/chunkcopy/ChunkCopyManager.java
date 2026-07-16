@@ -1,6 +1,8 @@
 package capslab.mirrorworld.utils.chunkcopy;
 
 import capslab.mirrorworld.MirrorWorld;
+import capslab.mirrorworld.utils.playerdata.MirrorWorldManager;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,6 +27,12 @@ public final class ChunkCopyManager {
     }
     private static final Queue<ChunkCopyJob> pendingJobs = new ArrayDeque<>();
     private static ChunkCopyJob activeJob;
+
+    public static void registerEventListeners() {
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            ChunkCopyManager.processJob(server, 1);
+        });
+    }
 
     public static void processJob(MinecraftServer server, int chunkCount) {
         if (activeJob == null && pendingJobs.isEmpty()) return;
@@ -51,7 +59,7 @@ public final class ChunkCopyManager {
 
     private static boolean mirrorChunk(MinecraftServer server, ChunkPos pos) {
         Level overworld = server.overworld();
-        Level mirror_world = server.getLevel(MirrorWorld.MIRROR_DIMENSION_KEY);
+        Level mirror_world = server.getLevel(MirrorWorldManager.MIRROR_DIMENSION_KEY);
         if (mirror_world == null) {
             MirrorWorld.LOGGER.error("MirrorWorld dimension doesn't exists");
             return false;

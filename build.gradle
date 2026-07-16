@@ -15,12 +15,9 @@ repositories {
 }
 
 loom {
-	splitEnvironmentSourceSets()
-
 	mods {
 		"mirrorworld" {
 			sourceSet sourceSets.main
-			sourceSet sourceSets.client
 		}
 	}
 }

@@ -1,6 +1,6 @@
 package capslab.mirrorworld.mixin;
 
-import capslab.mirrorworld.MirrorWorld;
+import capslab.mirrorworld.utils.playerdata.MirrorWorldManager;
 import capslab.mirrorworld.utils.playerdata.PlayerStorageManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -15,7 +15,7 @@ public class PlayerDataStorageMixin {
 
     @Inject(method = "save", at = @At("HEAD"), cancellable = true)
     private void mirrorworld$redirectSave(Player player, CallbackInfo ci) {
-        if (player.level().dimension().equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
+        if (player.level().dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)) {
             PlayerStorageManager.mirrorStorage.save((ServerPlayer) player);
             ci.cancel();
         }

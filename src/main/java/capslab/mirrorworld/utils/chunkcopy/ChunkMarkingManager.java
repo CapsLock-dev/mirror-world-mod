@@ -1,5 +1,6 @@
 package capslab.mirrorworld.utils.chunkcopy;
 
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -14,6 +15,12 @@ import java.util.UUID;
 
 public class ChunkMarkingManager {
     private static final HashMap<UUID, Set<ChunkPos>> markedChunks = new HashMap<>();
+
+    public static void registerEventListeners() {
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            highlightMarkedChunks(server);
+        });
+    }
 
     public static boolean markChunk(ServerPlayer p, ChunkPos chunkPos) {
         Set<ChunkPos> chunks = markedChunks.computeIfAbsent(p.getUUID(), uuid -> new HashSet<>());

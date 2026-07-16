@@ -16,17 +16,10 @@
 	"entrypoints": {
 		"main": [
 			"capslab.mirrorworld.MirrorWorld"
-		],
-		"client": [
-			"capslab.mirrorworld.client.MirrorWorldClient"
 		]
 	},
 	"mixins": [
-		"mirrorworld.mixins.json",
-		{
-			"config": "mirrorworld.client.mixins.json",
-			"environment": "client"
-		}
+		"mirrorworld.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.3",

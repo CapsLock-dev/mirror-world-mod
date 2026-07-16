@@ -1,6 +1,6 @@
 package capslab.mirrorworld.mixin;
 
-import capslab.mirrorworld.MirrorWorld;
+import capslab.mirrorworld.utils.playerdata.MirrorWorldManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class NetherPortalMixin {
     @Inject(method = "entityInside", at = @At("HEAD"), cancellable = true)
     private void onEntityCollision(BlockState blockState, Level level, BlockPos blockPos, Entity entity, InsideBlockEffectApplier insideBlockEffectApplier, boolean bl, CallbackInfo ci) {
-        if (level.dimension().equals(MirrorWorld.MIRROR_DIMENSION_KEY)) {
+        if (level.dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)) {
             ci.cancel();
         }
     }

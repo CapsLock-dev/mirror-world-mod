@@ -5,7 +5,6 @@
   "mixins": [
     "EndGateWayMixin",
     "EndPortalMixin",
-    "ExampleMixin",
     "NetherPortalMixin",
     "PlayerAdvancementsMixin",
     "PlayerDataStorageMixin",
