@@ -22,6 +22,7 @@ Player data in both worlds are independent of each other.
 
 ### Known issues
 - Doesn't copy entities, block entities and don't update light.
+- Strange bug when a player leaves while in the mirror dimension, they respawn in overworld but underground.
 
 ### Will add in future
 - Admin commands in mirror dimension 
