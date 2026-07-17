@@ -8,6 +8,7 @@
     "NetherPortalMixin",
     "PlayerAdvancementsMixin",
     "PlayerDataStorageMixin",
+    "PlayerListRemoveMixin",
     "PlayerRespawnMixin"
   ],
   "injectors": {
