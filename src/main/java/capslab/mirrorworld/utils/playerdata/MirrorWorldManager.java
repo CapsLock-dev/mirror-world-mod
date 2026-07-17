@@ -25,11 +25,6 @@ public class MirrorWorldManager {
     public static final ResourceKey<Level> MIRROR_DIMENSION_KEY = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("mirrorworld", "mirror_world_dim"));
 
     public static void registerEventListeners() {
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            if (handler.player.level().dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)) {
-                MirrorWorldManager.exitMirror(server, handler.player);
-            }
-        });
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             PlayerStorageManager.setupStorages(server);
         });
