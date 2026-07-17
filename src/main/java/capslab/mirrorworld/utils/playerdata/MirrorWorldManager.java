@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Optional;
@@ -41,6 +42,7 @@ public class MirrorWorldManager {
         Optional<CompoundTag> mirrorData = mirrorStorage.load(player);
 
         Vec3 destination = mirrorData.map(PlayerStorageManager::extractPos).orElse(player.position());
+        Vec2 rotation = mirrorData.map(PlayerStorageManager::extractRotation).orElse(new Vec2(0,0));
         if (mirrorData.isPresent()) {
             PlayerStorageManager.applyPlayerData(player, mirrorData.get(), GameType.CREATIVE);
         } else {
@@ -51,7 +53,7 @@ public class MirrorWorldManager {
         if (mirrorWorld == null) {
             return Result.MIRROR_WORLD_UNAVAILABLE;
         }
-        TeleportTransition transition = new TeleportTransition(mirrorWorld, destination, Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING);
+        TeleportTransition transition = new TeleportTransition(mirrorWorld, destination, Vec3.ZERO, rotation.x, rotation.y, TeleportTransition.DO_NOTHING);
         player.teleport(transition);
         server.execute(() -> {
             player.connection.send(new ClientboundGameEventPacket(
@@ -66,6 +68,7 @@ public class MirrorWorldManager {
         Optional<CompoundTag> normalData = normalStorage.load(player);
 
         Vec3 destination = normalData.map(PlayerStorageManager::extractPos).orElse(player.position());
+        Vec2 rotation = normalData.map(PlayerStorageManager::extractRotation).orElse(new Vec2(0,0));
         if (normalData.isPresent()) {
             PlayerStorageManager.applyPlayerData(player, normalData.get(), GameType.SURVIVAL);
         } else {
@@ -73,7 +76,7 @@ public class MirrorWorldManager {
         }
 
         ServerLevel overworld = server.overworld();
-        TeleportTransition transition = new TeleportTransition(overworld, destination, Vec3.ZERO, 0.0F, 0.0F, TeleportTransition.DO_NOTHING);
+        TeleportTransition transition = new TeleportTransition(overworld, destination, Vec3.ZERO, rotation.x, rotation.y, TeleportTransition.DO_NOTHING);
         player.teleport(transition);
         server.execute(() -> {
             player.connection.send(new ClientboundGameEventPacket(

@@ -4,6 +4,7 @@ import capslab.mirrorworld.MirrorWorld;
 import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.minecraft.core.Rotations;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
@@ -14,9 +15,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 import java.nio.file.Path;
@@ -50,7 +53,6 @@ public class PlayerStorageManager {
         CompoundTag safe = tag.copy();
         safe.remove("Pos");
         safe.remove("Dimension");
-        safe.remove("Rotation");
 
         ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, player.registryAccess(), safe);
         player.load(input);
@@ -98,5 +100,12 @@ public class PlayerStorageManager {
         double y = posList.getDouble(1).get();
         double z = posList.getDouble(2).get();
         return new Vec3(x, y, z);
+    }
+
+    public static Vec2 extractRotation(CompoundTag tag) {
+        ListTag posList = tag.getList("Rotation").get();
+        float yRot = posList.getFloat(0).get();
+        float xRot = posList.getFloat(1).get();
+        return new Vec2(yRot, xRot);
     }
 }
