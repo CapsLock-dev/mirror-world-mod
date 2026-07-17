@@ -1,6 +1,7 @@
 package capslab.mirrorworld.mixin;
 
 import capslab.mirrorworld.utils.playerdata.MirrorWorldManager;
+import capslab.mirrorworld.utils.playerdata.PlayerStorageManager;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.server.PlayerAdvancements;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,7 +19,8 @@ public abstract class PlayerAdvancementsMixin {
 
     @Inject(method = "award", at = @At("HEAD"), cancellable = true)
     private void mirrorworld$blockMirrorAdvancements(AdvancementHolder advancementHolder, String string, CallbackInfoReturnable<Boolean> cir) {
-        if (player.level().dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)) {
+        if (player.level().dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)
+                || player.getAttached(PlayerStorageManager.PLAYERDATA_ORIGIN_ATTACHMENT).equals("mirror")) {
             cir.setReturnValue(false);
         }
     }

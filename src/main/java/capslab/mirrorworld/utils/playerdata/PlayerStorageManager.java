@@ -1,16 +1,19 @@
 package capslab.mirrorworld.utils.playerdata;
 
 import capslab.mirrorworld.MirrorWorld;
+import com.mojang.serialization.Codec;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
@@ -30,6 +33,10 @@ public class PlayerStorageManager {
             Identifier.fromNamespaceAndPath(MirrorWorld.MOD_ID, "overworld_respawn_attachment"),
             builder -> builder.persistent(ServerPlayer.RespawnConfig.CODEC)
     );
+    public static final AttachmentType<String> PLAYERDATA_ORIGIN_ATTACHMENT = AttachmentRegistry.createPersistent(
+            Identifier.fromNamespaceAndPath(MirrorWorld.MOD_ID, "playerdata_origin_attachment"),
+            Codec.STRING
+    );
 
     public static void setupStorages(MinecraftServer server) {
         Path realPlayerDataDir = server.getWorldPath(LevelResource.PLAYER_DATA_DIR);
@@ -40,7 +47,6 @@ public class PlayerStorageManager {
     }
 
     public static void applyPlayerData(ServerPlayer player, CompoundTag tag, GameType gameMode) {
-        MirrorWorld.LOGGER.info("Player data apply");
         CompoundTag safe = tag.copy();
         safe.remove("Pos");
         safe.remove("Dimension");
@@ -51,6 +57,12 @@ public class PlayerStorageManager {
         player.removeAllEffects();
         player.setGameMode(gameMode);
         player.onUpdateAbilities();
+
+        if (gameMode == GameType.CREATIVE) {
+            player.setAttached(PLAYERDATA_ORIGIN_ATTACHMENT, "mirror");
+        } else if (gameMode == GameType.SURVIVAL) {
+            player.setAttached(PLAYERDATA_ORIGIN_ATTACHMENT, "normal");
+        }
 
         player.connection.send(new ClientboundSetHealthPacket(
                 player.getHealth(),
@@ -69,6 +81,7 @@ public class PlayerStorageManager {
         player.removeAllEffects();
         player.setExperienceLevels(0);
         player.setExperiencePoints(0);
+        player.setAttached(PLAYERDATA_ORIGIN_ATTACHMENT, "mirror");
 
         player.onUpdateAbilities();
         player.connection.send(new ClientboundSetHealthPacket(
