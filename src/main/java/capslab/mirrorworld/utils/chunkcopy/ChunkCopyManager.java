@@ -60,7 +60,6 @@ public final class ChunkCopyManager {
         for (int i=0; i<chunkCount; ++i) {
             ChunkPos pos = activeJob.chunks.poll();
             if (pos == null) {
-                ChunkMarkingManager.unmarkAllChunks(activeJob.player);
                 if (p != null) p.sendSystemMessage(Component.literal("Chunk copying job finished"));
                 activeJob = null;
                 break;
@@ -71,6 +70,10 @@ public final class ChunkCopyManager {
     }
 
     public static boolean addJob(UUID playerUUID, Queue<ChunkPos> chunks) {
+        if ((activeJob != null && activeJob.player.equals(playerUUID))
+                || pendingJobs.stream().anyMatch(job -> job.player.equals(playerUUID)) ) {
+            return false;
+        }
         return pendingJobs.add(new ChunkCopyJob(playerUUID, chunks));
     }
 

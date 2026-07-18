@@ -37,10 +37,12 @@ public class CopyChunkCommands {
         boolean success = ChunkCopyManager.addJob(p.getUUID(), chunkPosQueue);
 
         if (success) {
+            ChunkMarkingManager.unmarkAllChunks(p.getUUID());
             context.getSource().sendSuccess(() -> Component.literal("Chunk copying queued"), false);
         } else {
-            context.getSource().sendSuccess(() -> Component.literal("Failed to queue chunk copying"), false);
+            context.getSource().sendFailure(Component.literal("You already have a chunk copying job in progress"));
         }
+
         return 1;
     }
 }
