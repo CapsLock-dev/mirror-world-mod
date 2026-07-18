@@ -3,18 +3,35 @@ package capslab.mirrorworld.utils.chunkcopy;
 import capslab.mirrorworld.MirrorWorld;
 import capslab.mirrorworld.utils.playerdata.MirrorWorldManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.*;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public final class ChunkCopyManager {
     static class ChunkCopyJob {
@@ -58,8 +75,8 @@ public final class ChunkCopyManager {
     }
 
     private static boolean mirrorChunk(MinecraftServer server, ChunkPos pos) {
-        Level overworld = server.overworld();
-        Level mirror_world = server.getLevel(MirrorWorldManager.MIRROR_DIMENSION_KEY);
+        ServerLevel overworld = server.overworld();
+        ServerLevel mirror_world = server.getLevel(MirrorWorldManager.MIRROR_DIMENSION_KEY);
         if (mirror_world == null) {
             MirrorWorld.LOGGER.error("MirrorWorld dimension doesn't exists");
             return false;
@@ -84,6 +101,56 @@ public final class ChunkCopyManager {
             }
             destination.recalcBlockCounts();
         }
+
+        RegistryAccess registryAccess = server.registryAccess();
+        for (BlockPos blockPos : sourceChunk.getBlockEntitiesPos()) {
+            BlockEntity sourceBe = sourceChunk.getBlockEntity(blockPos);
+            if (sourceBe == null) continue;
+
+            BlockState state = destinationChunk.getBlockState(blockPos);
+            if (!(state.getBlock() instanceof EntityBlock entityBlock)) {
+                continue;
+            }
+
+            BlockEntity newBe = entityBlock.newBlockEntity(blockPos, state);
+            if (newBe == null) continue;
+
+            TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registryAccess);
+            sourceBe.saveWithFullMetadata(output);
+            CompoundTag tag = output.buildResult();
+
+            ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, registryAccess, tag);
+            newBe.loadWithComponents(input);
+
+            destinationChunk.setBlockEntity(newBe);
+        }
+
+        AABB chunkBounds = new AABB(
+                pos.getMinBlockX(), destinationChunk.getMinY(), pos.getMinBlockZ(),
+                pos.getMaxBlockX() + 1, destinationChunk.getMaxY(), pos.getMaxBlockZ() + 1
+        );
+        for (Entity sourceEntity : overworld.getEntities((Entity) null, chunkBounds, e -> !(e instanceof ServerPlayer))) {
+            TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registryAccess);
+            sourceEntity.save(output);
+            CompoundTag tag = output.buildResult();
+
+            Entity copy = EntityType.loadEntityRecursive(tag, mirror_world, EntitySpawnReason.COMMAND, entity -> entity);
+            if (copy != null) {
+                mirror_world.addFreshEntity(copy);
+            }
+        }
+
+        ChunkMap chunkMap = mirror_world.getChunkSource().chunkMap;
+        ThreadedLevelLightEngine lightEngine = (ThreadedLevelLightEngine) mirror_world.getLightEngine();
+        CompletableFuture<ChunkAccess> lightingFuture = lightEngine.lightChunk(destinationChunk, false);
+        lightingFuture.thenAcceptAsync(litChunk -> {
+            List<ServerPlayer> viewers = chunkMap.getPlayers(pos, false);
+            ClientboundLevelChunkWithLightPacket packet =
+                    new ClientboundLevelChunkWithLightPacket((LevelChunk) destinationChunk, lightEngine, null, null);
+            for (ServerPlayer player : viewers) {
+                player.connection.send(packet);
+            }
+        });
         return true;
     }
 }

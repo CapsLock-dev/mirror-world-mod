@@ -21,7 +21,6 @@ Player data in both worlds are independent of each other.
 4. Run `/mirror_tp` to enter your mirror world and `/mirror_exit` to return to overworld.
 
 ### Known issues
-- Doesn't copy entities, block entities and don't update light.
 
 ### Will add in future
 - Admin commands in mirror dimension 
