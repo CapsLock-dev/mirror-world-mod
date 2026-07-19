@@ -15,10 +15,15 @@ import java.util.UUID;
 
 public class ChunkMarkingManager {
     private static final HashMap<UUID, Set<ChunkPos>> markedChunks = new HashMap<>();
+    private static int markParticleTiming = 0;
 
     public static void registerEventListeners() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            highlightMarkedChunks(server);
+            if (markParticleTiming >= 10) {
+                highlightMarkedChunks(server);
+                markParticleTiming = 0;
+            }
+            ++markParticleTiming;
         });
     }
 
@@ -27,7 +32,6 @@ public class ChunkMarkingManager {
         if(!chunks.add(chunkPos)) {
             return false;
         }
-        markedChunks.put(p.getUUID(), chunks);
         return true;
     }
 

@@ -11,9 +11,6 @@ import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.*;
 import net.minecraft.util.ProblemReporter;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -25,12 +22,8 @@ import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.phys.AABB;
 
-import java.util.ArrayDeque;
-import java.util.List;
-import java.util.Queue;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public final class ChunkCopyManager {
@@ -41,32 +34,43 @@ public final class ChunkCopyManager {
         }
         UUID player;
         Queue<ChunkPos> chunks;
+        CompletableFuture<Boolean> workInFlight = CompletableFuture.completedFuture(null);
     }
     private static final Queue<ChunkCopyJob> pendingJobs = new ArrayDeque<>();
     private static ChunkCopyJob activeJob;
 
     public static void registerEventListeners() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            ChunkCopyManager.processJob(server, 1);
+            ChunkCopyManager.processJob(server);
         });
     }
 
-    public static void processJob(MinecraftServer server, int chunkCount) {
+    public static void processJob(MinecraftServer server) {
         if (activeJob == null && pendingJobs.isEmpty()) return;
         if (activeJob == null) {
             activeJob = pendingJobs.poll();
         }
-        ServerPlayer p = server.getPlayerList().getPlayer(activeJob.player);
-        for (int i=0; i<chunkCount; ++i) {
-            ChunkPos pos = activeJob.chunks.poll();
-            if (pos == null) {
-                if (p != null) p.sendSystemMessage(Component.literal("Chunk copying job finished"));
-                activeJob = null;
-                break;
-            }
-            boolean success = mirrorChunk(server, pos);
-            if (!success && p != null) p.sendSystemMessage(Component.literal("Failed to copy one of the chunks"));
+        if (!activeJob.workInFlight.isDone()) return;
+        ChunkPos pos = activeJob.chunks.poll();
+        if (pos == null) {
+            ServerPlayer p = server.getPlayerList().getPlayer(activeJob.player);
+            if (p != null) p.sendSystemMessage(Component.literal("Chunk copying job finished"));
+            activeJob = null;
+            return;
         }
+        ChunkCopyJob job = activeJob;
+        activeJob.workInFlight = activeJob.workInFlight
+                .thenCompose(a -> mirrorChunk(server, pos))
+                .exceptionally(ex -> {
+                    MirrorWorld.LOGGER.error("Unexpected error copying chunk {}", pos, ex);
+                    return false;
+                }).thenApply(success -> {
+                    if (!success) {
+                        ServerPlayer p = server.getPlayerList().getPlayer(job.player);
+                        if (p != null) p.sendSystemMessage(Component.literal("Failed to copy one of the chunks"));
+                    }
+                    return success;
+                });
     }
 
     public static boolean addJob(UUID playerUUID, Queue<ChunkPos> chunks) {
@@ -77,21 +81,39 @@ public final class ChunkCopyManager {
         return pendingJobs.add(new ChunkCopyJob(playerUUID, chunks));
     }
 
-    private static boolean mirrorChunk(MinecraftServer server, ChunkPos pos) {
+    private static CompletableFuture<Boolean> mirrorChunk(MinecraftServer server, ChunkPos pos) {
         ServerLevel overworld = server.overworld();
         ServerLevel mirror_world = server.getLevel(MirrorWorldManager.MIRROR_DIMENSION_KEY);
         if (mirror_world == null) {
             MirrorWorld.LOGGER.error("MirrorWorld dimension doesn't exists");
-            return false;
+            return CompletableFuture.completedFuture(false);
         }
-        ChunkAccess sourceChunk = overworld.getChunk(pos.x, pos.z, ChunkStatus.FULL, true);
-        ChunkAccess destinationChunk = mirror_world.getChunk(pos.x, pos.z, ChunkStatus.FULL, true);
-        if (sourceChunk == null || destinationChunk == null) {
-            MirrorWorld.LOGGER.error("Can't access one of the chunks");
-            return false;
-        }
+        CompletableFuture<ChunkResult<ChunkAccess>> sourceFuture = overworld.getChunkSource()
+                .getChunkFuture(pos.x, pos.z, ChunkStatus.FULL, true);
+        CompletableFuture<ChunkResult<ChunkAccess>> destinationFuture = mirror_world.getChunkSource()
+                .getChunkFuture(pos.x, pos.z, ChunkStatus.FULL, true);
+
+        return sourceFuture.thenCombine(destinationFuture, (source, destination) -> {
+            ChunkAccess sourceChunk = source.orElse(null);
+            ChunkAccess destinationChunk = destination.orElse(null);
+            if (sourceChunk == null || destinationChunk == null) {
+                MirrorWorld.LOGGER.error("Can't access one of the chunks");
+                return null;
+            }
+            return new ChunkAccess[]{sourceChunk, destinationChunk};
+        }).thenApplyAsync(chunkAccesses -> {
+            if (chunkAccesses == null) return false;
+            return copyChunk(chunkAccesses[0], chunkAccesses[1], pos, server);
+        }, server);
+    }
+
+    private static boolean copyChunk(ChunkAccess sourceChunk, ChunkAccess destinationChunk, ChunkPos pos, MinecraftServer server) {
         LevelChunkSection[] sourceSections = sourceChunk.getSections();
         LevelChunkSection[] destinationSections = destinationChunk.getSections();
+        if (sourceSections.length != destinationSections.length) {
+            MirrorWorld.LOGGER.error("Mirror dimension height is different from overworld, can't copy chunk {}", pos);
+            return false;
+        }
         for (int i=0; i<sourceSections.length; ++i) {
             var source = sourceSections[i];
             var destination = destinationSections[i];
@@ -104,7 +126,6 @@ public final class ChunkCopyManager {
             }
             destination.recalcBlockCounts();
         }
-
         RegistryAccess registryAccess = server.registryAccess();
         for (BlockPos blockPos : sourceChunk.getBlockEntitiesPos()) {
             BlockEntity sourceBe = sourceChunk.getBlockEntity(blockPos);
@@ -127,33 +148,22 @@ public final class ChunkCopyManager {
 
             destinationChunk.setBlockEntity(newBe);
         }
-
-        AABB chunkBounds = new AABB(
-                pos.getMinBlockX(), destinationChunk.getMinY(), pos.getMinBlockZ(),
-                pos.getMaxBlockX() + 1, destinationChunk.getMaxY(), pos.getMaxBlockZ() + 1
-        );
-        for (Entity sourceEntity : overworld.getEntities((Entity) null, chunkBounds, e -> !(e instanceof ServerPlayer))) {
-            TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registryAccess);
-            sourceEntity.save(output);
-            CompoundTag tag = output.buildResult();
-
-            Entity copy = EntityType.loadEntityRecursive(tag, mirror_world, EntitySpawnReason.COMMAND, entity -> entity);
-            if (copy != null) {
-                mirror_world.addFreshEntity(copy);
-            }
+        ServerLevel mirror_world = server.getLevel(MirrorWorldManager.MIRROR_DIMENSION_KEY);
+        if (mirror_world == null) {
+            MirrorWorld.LOGGER.error("MirrorWorld dimension doesn't exists");
+            return false;
         }
-
         ChunkMap chunkMap = mirror_world.getChunkSource().chunkMap;
         ThreadedLevelLightEngine lightEngine = (ThreadedLevelLightEngine) mirror_world.getLightEngine();
         CompletableFuture<ChunkAccess> lightingFuture = lightEngine.lightChunk(destinationChunk, false);
-        lightingFuture.thenAcceptAsync(litChunk -> {
+        lightingFuture.thenAcceptAsync(litChunk ->  {
             List<ServerPlayer> viewers = chunkMap.getPlayers(pos, false);
             ClientboundLevelChunkWithLightPacket packet =
                     new ClientboundLevelChunkWithLightPacket((LevelChunk) destinationChunk, lightEngine, null, null);
             for (ServerPlayer player : viewers) {
                 player.connection.send(packet);
             }
-        });
+        }, server);
         return true;
     }
 }
