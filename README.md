@@ -1,4 +1,4 @@
-# MirrorWorld (WIP)
+# MirrorWorld
 
 Adding dimension where player can experiment or plan future building without affecting their real world.
 Player data in both worlds are independent of each other.
