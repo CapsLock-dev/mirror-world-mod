@@ -15,8 +15,8 @@ public class PlayerDataStorageMixin {
 
     @Inject(method = "save", at = @At("HEAD"), cancellable = true)
     private void mirrorworld$redirectSave(Player player, CallbackInfo ci) {
-        if (player.level().dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)
-                || player.getAttached(PlayerStorageManager.PLAYERDATA_ORIGIN_ATTACHMENT).equals("mirror")) {
+        var attachment = player.getAttached(PlayerStorageManager.PLAYERDATA_ORIGIN_ATTACHMENT);
+        if (player.level().dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY) || (attachment != null && attachment.equals("mirror"))) {
             PlayerStorageManager.mirrorStorage.save((ServerPlayer) player);
             ci.cancel();
         }

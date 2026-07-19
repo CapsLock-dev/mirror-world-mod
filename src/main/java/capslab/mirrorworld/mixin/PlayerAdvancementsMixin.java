@@ -19,8 +19,8 @@ public abstract class PlayerAdvancementsMixin {
 
     @Inject(method = "award", at = @At("HEAD"), cancellable = true)
     private void mirrorworld$blockMirrorAdvancements(AdvancementHolder advancementHolder, String string, CallbackInfoReturnable<Boolean> cir) {
-        if (player.level().dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY)
-                || player.getAttached(PlayerStorageManager.PLAYERDATA_ORIGIN_ATTACHMENT).equals("mirror")) {
+        var attachment = player.getAttached(PlayerStorageManager.PLAYERDATA_ORIGIN_ATTACHMENT);
+        if (player.level().dimension().equals(MirrorWorldManager.MIRROR_DIMENSION_KEY) || (attachment != null && attachment.equals("mirror"))) {
             cir.setReturnValue(false);
         }
     }
